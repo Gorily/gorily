@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PWA Subscription Form</title>
+    <title>Заявки на работу</title>
     <link rel="manifest" href="manifest.json">
     <style>
         body {
@@ -25,37 +25,34 @@
     </style>
 </head>
 <body>
-<h1>Subscribe to our newsletter</h1>
+<h1>Хочу стать бортпроводником</h1>
 <form id="subscription-form">
-    <label for="email">Email:</label>
+    <label for="email">Ваша почта:</label>
     <input type="email" id="email" name="email" required>
     <label>
         <input type="checkbox" id="consent" name="consent" required>
-        I agree to the terms and conditions
+        Я согласен на использование почты для коммуникации по вопросам трудоустройства.
     </label>
-    <button type="submit" id="submit-btn" disabled>Submit</button>
+    <button type="submit" id="submit-btn" disabled>Отправить</button>
 </form>
 
 <script>
-    // Check if the browser supports Service Worker
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('service-worker.js')
                 .then(registration => {
-                    console.log('Service Worker registered:', registration.scope);
+                    console.log('Service Worker зарегистрирован:', registration.scope);
                 })
                 .catch(error => {
-                    console.error('Service Worker registration failed:', error);
+                    console.error('Service Worker не зарегистрирован:', error);
                 });
         });
     }
 
-    // Get the form and add an event listener for submission
     const form = document.getElementById('subscription-form');
     const submitBtn = document.getElementById('submit-btn');
     const consentCheckbox = document.getElementById('consent');
 
-    // Enable/disable the submit button based on the consent checkbox
     consentCheckbox.addEventListener('change', () => {
         submitBtn.disabled = !consentCheckbox.checked;
     });
@@ -66,25 +63,19 @@
         const email = document.getElementById('email').value;
         const consent = document.getElementById('consent').checked;
 
-        // Check if the device is online
         if (navigator.onLine) {
-            // Submit the form data
-            // (replace this with your actual server-side logic)
-            console.log('Submitting form data:', { email, consent });
+            console.log('Данные отправлены:', { email, consent });
 
-            // Clear the form
             form.reset();
         } else {
             // Store the form data in IndexedDB
             storeFormData({ email, consent });
-            alert('Form data saved. It will be sent when you are online.');
+            alert('Данные сохранены.');
 
-            // Clear the form
             form.reset();
         }
     });
 
-    // Function to store form data in IndexedDB
     function storeFormData(data) {
         const request = window.indexedDB.open('subscription-db', 1);
 

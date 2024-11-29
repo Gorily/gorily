@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Scanner</title>
+  <script src="qr-scanner.umd.min.js"></script>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+    video {
+      width: 300px;
+      height: auto;
+      border: 1px solid #ccc;
+    }
+    #message {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+<video id="qr-video"></video>
+<div id="message"></div>
+
+<script>
+  const video = document.getElementById('qr-video');
+  const messageDiv = document.getElementById('message');
+
+  // Внутренняя таблица ID
+  const passedIds = new Set();
+
+  // Функция для инициализации сканера
+  function startScanner() {
+    const qrScanner = new QrScanner(video, result => handleScan(result));
+    qrScanner.start();
+  }
+
+  // Запрашиваем разрешение на доступ к камере
+  async function requestCameraAccess() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+      startScanner();
+    } catch (error) {
+      messageDiv.textContent = 'Ошибка доступа к камере: ' + error.message;
+    }
+  }
+
+  function handleScan(result) {
+    // Проверяем, соответствует ли результат нужному формату
+    const regex = /^https:\/\/10\.party\/#(.+)$/;
+    const match = result.match(regex);
+
+    if (match) {
+      const id = match[1];
+
+      // Проверяем, прошел ли ID ранее
+      if (passedIds.has(id)) {
+        messageDiv.textContent = 'Этот ID уже был использован.';
+      } else {
+        // Добавляем ID в таблицу и выводим сообщение об успешном проходе
+        passedIds.add(id);
+        messageDiv.textContent = 'Успешный проход с ID: ' + id;
+      }
+
+      // Останавливаем сканер
+      qrScanner.stop();
+      // Перезапускаем сканер через 2 секунды
+      setTimeout(() => {
+        messageDiv.textContent = '';
+        startScanner();
+      }, 2000);
+    }
+  }
+
+  // Запрашиваем доступ к камере при загрузке страницы
+  requestCameraAccess();
+</script>
+
+</body>
+</html>

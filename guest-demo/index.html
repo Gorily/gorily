@@ -24,20 +24,39 @@
       font-size: 1.2em;
       color: green;
     }
+    #scanned-ids {
+      margin-top: 20px;
+      list-style-type: none;
+      padding: 0;
+    }
+    .active {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
   </style>
 </head>
 <body>
 
 <video id="qr-video"></video>
 <div id="message"></div>
+<h3>Отсканированные коды:</h3>
+<ul id="scanned-ids"></ul>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const video = document.getElementById('qr-video');
     const messageDiv = document.getElementById('message');
+    const scannedIdsList = document.getElementById('scanned-ids');
 
-    // Внутренняя таблица ID
-    const passedIds = new Set();
+    // Изначальный список кодов и ФИО
+    const initialCodes = [
+      { id: '12345', name: 'Иванов Иван Иванович', activated: false },
+      { id: '67890', name: 'Петров Петр Петрович', activated: false },
+      { id: '54321', name: 'Сидоров Сидор Сидорович', activated: false }
+    ];
+
     let qrScanner;
 
     // Функция для инициализации сканера
@@ -62,21 +81,47 @@
       }
     }
 
+    // Проверяем, есть ли доступ к камере
+    async function checkCameraAccess() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasCamera = devices.some(device => device.kind === 'videoinput');
+
+      if (hasCamera) {
+        requestCameraAccess();
+      } else {
+        messageDiv.textContent = 'Камера не найдена.';
+      }
+    }
+
     function handleScan(result) {
       // Проверяем, соответствует ли результат нужному формату
-      const regex = /^https:\/\/10\.party\/#(.+)$/;
+      const regex = /^PBD10#(.+)$/;
       const match = result.match(regex);
 
       if (match) {
         const id = match[1];
+        const codeEntry = initialCodes.find(code => code.id === id);
 
-        // Проверяем, прошел ли ID ранее
-        if (passedIds.has(id)) {
-          messageDiv.textContent = 'Этот ID уже был использован.';
+        if (codeEntry) {
+          if (!codeEntry.activated) {
+            // Код найден и не активирован
+            codeEntry.activated = true; // Активируем код
+            messageDiv.textContent = 'Успешный проход с ID: ' + id;
+
+            // Добавляем ID в список отсканированных кодов
+            const listItem = document.createElement('li');
+            listItem.textContent = `${id} - ${codeEntry.name}`;
+            listItem.classList.add('active');
+            scannedIdsList.appendChild(listItem);
+          } else {
+            // Код уже активирован
+            messageDiv.textContent = 'Этот ID уже был использован.';
+            messageDiv.classList.add('error');
+          }
         } else {
-          // Добавляем ID в таблицу и выводим сообщение об успешном проходе
-          passedIds.add(id);
-          messageDiv.textContent = 'Успешный проход с ID: ' + id;
+          // Код не найден в списке
+          messageDiv.textContent = 'Код не найден в списке.';
+          messageDiv.classList.add('error');
         }
 
         // Останавливаем сканер
@@ -84,13 +129,14 @@
         // Перезапускаем сканер через 2 секунды
         setTimeout(() => {
           messageDiv.textContent = '';
+          messageDiv.classList.remove('error'); // Убираем класс ошибки
           startScanner();
         }, 2000);
       }
     }
 
-    // Запрашиваем доступ к задней камере при загрузке страницы
-    requestCameraAccess();
+    // Проверяем доступ к камере при загрузке страницы
+    checkCameraAccess();
   });
 </script>
 

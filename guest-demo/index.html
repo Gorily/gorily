@@ -24,14 +24,10 @@
       font-size: 1.2em;
       color: green;
     }
-    #camera-select {
-      margin-bottom: 20px;
-    }
   </style>
 </head>
 <body>
 
-<select id="camera-select"></select>
 <video id="qr-video"></video>
 <div id="message"></div>
 
@@ -39,29 +35,28 @@
   document.addEventListener('DOMContentLoaded', () => {
     const video = document.getElementById('qr-video');
     const messageDiv = document.getElementById('message');
-    const cameraSelect = document.getElementById('camera-select');
 
     // Внутренняя таблица ID
     const passedIds = new Set();
     let qrScanner;
 
     // Функция для инициализации сканера
-    function startScanner(deviceId) {
+    function startScanner() {
       qrScanner = new QrScanner(video, result => handleScan(result));
       qrScanner.start();
     }
 
-    // Запрашиваем разрешение на доступ к камере
-    async function requestCameraAccess(deviceId) {
+    // Запрашиваем разрешение на доступ к задней камере
+    async function requestCameraAccess() {
       try {
         const constraints = {
           video: {
-            deviceId: deviceId ? { exact: deviceId } : undefined
+            facingMode: { exact: "environment" } // Используем заднюю камеру
           }
         };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
-        startScanner(deviceId);
+        startScanner();
       } catch (error) {
         messageDiv.textContent = 'Ошибка доступа к камере: ' + error.message;
       }
@@ -94,38 +89,8 @@
       }
     }
 
-    // Получаем список доступных камер
-    async function getCameraDevices() {
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(device => device.kind === 'videoinput');
-
-        videoDevices.forEach(device => {
-          const option = document.createElement('option');
-          option.value = device.deviceId;
-          option.textContent = device.label || `Камера ${cameraSelect.length + 1}`;
-          cameraSelect.appendChild(option);
-        });
-
-        // Запрашиваем доступ к первой доступной камере
-        if (videoDevices.length > 0) {
-          requestCameraAccess(videoDevices[0].deviceId);
-        }
-      } catch (error) {
-        messageDiv.textContent = 'Ошибка получения камер: ' + error.message;
-      }
-    }
-
-    // Обработчик изменения выбора камеры
-    cameraSelect.addEventListener('change', () => {
-      if (qrScanner) {
-        qrScanner.stop();
-      }
-      requestCameraAccess(cameraSelect.value);
-    });
-
-    // Получаем доступные камеры при загрузке страницы
-    getCameraDevices();
+    // Запрашиваем доступ к задней камере при загрузке страницы
+    requestCameraAccess();
   });
 </script>
 

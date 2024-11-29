@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QR Scanner</title>
-  <script src="qr-scanner.umd.min.js"></script>
+  <script src="qr-scanner.umd.min.js"></script> <!-- Подключаем правильный файл -->
   <style>
     body {
       display: flex;
@@ -24,66 +24,109 @@
       font-size: 1.2em;
       color: green;
     }
+    #camera-select {
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
 
+<select id="camera-select"></select>
 <video id="qr-video"></video>
 <div id="message"></div>
 
 <script>
-  const video = document.getElementById('qr-video');
-  const messageDiv = document.getElementById('message');
+  document.addEventListener('DOMContentLoaded', () => {
+    const video = document.getElementById('qr-video');
+    const messageDiv = document.getElementById('message');
+    const cameraSelect = document.getElementById('camera-select');
 
-  // Внутренняя таблица ID
-  const passedIds = new Set();
+    // Внутренняя таблица ID
+    const passedIds = new Set();
+    let qrScanner;
 
-  // Функция для инициализации сканера
-  function startScanner() {
-    const qrScanner = new QrScanner(video, result => handleScan(result));
-    qrScanner.start();
-  }
-
-  // Запрашиваем разрешение на доступ к камере
-  async function requestCameraAccess() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      video.srcObject = stream;
-      startScanner();
-    } catch (error) {
-      messageDiv.textContent = 'Ошибка доступа к камере: ' + error.message;
+    // Функция для инициализации сканера
+    function startScanner(deviceId) {
+      qrScanner = new QrScanner(video, result => handleScan(result));
+      qrScanner.start();
     }
-  }
 
-  function handleScan(result) {
-    // Проверяем, соответствует ли результат нужному формату
-    const regex = /^https:\/\/10\.party\/#(.+)$/;
-    const match = result.match(regex);
-
-    if (match) {
-      const id = match[1];
-
-      // Проверяем, прошел ли ID ранее
-      if (passedIds.has(id)) {
-        messageDiv.textContent = 'Этот ID уже был использован.';
-      } else {
-        // Добавляем ID в таблицу и выводим сообщение об успешном проходе
-        passedIds.add(id);
-        messageDiv.textContent = 'Успешный проход с ID: ' + id;
+    // Запрашиваем разрешение на доступ к камере
+    async function requestCameraAccess(deviceId) {
+      try {
+        const constraints = {
+          video: {
+            deviceId: deviceId ? { exact: deviceId } : undefined
+          }
+        };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        startScanner(deviceId);
+      } catch (error) {
+        messageDiv.textContent = 'Ошибка доступа к камере: ' + error.message;
       }
-
-      // Останавливаем сканер
-      qrScanner.stop();
-      // Перезапускаем сканер через 2 секунды
-      setTimeout(() => {
-        messageDiv.textContent = '';
-        startScanner();
-      }, 2000);
     }
-  }
 
-  // Запрашиваем доступ к камере при загрузке страницы
-  requestCameraAccess();
+    function handleScan(result) {
+      // Проверяем, соответствует ли результат нужному формату
+      const regex = /^https:\/\/10\.party\/#(.+)$/;
+      const match = result.match(regex);
+
+      if (match) {
+        const id = match[1];
+
+        // Проверяем, прошел ли ID ранее
+        if (passedIds.has(id)) {
+          messageDiv.textContent = 'Этот ID уже был использован.';
+        } else {
+          // Добавляем ID в таблицу и выводим сообщение об успешном проходе
+          passedIds.add(id);
+          messageDiv.textContent = 'Успешный проход с ID: ' + id;
+        }
+
+        // Останавливаем сканер
+        qrScanner.stop();
+        // Перезапускаем сканер через 2 секунды
+        setTimeout(() => {
+          messageDiv.textContent = '';
+          startScanner();
+        }, 2000);
+      }
+    }
+
+    // Получаем список доступных камер
+    async function getCameraDevices() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+        videoDevices.forEach(device => {
+          const option = document.createElement('option');
+          option.value = device.deviceId;
+          option.textContent = device.label || `Камера ${cameraSelect.length + 1}`;
+          cameraSelect.appendChild(option);
+        });
+
+        // Запрашиваем доступ к первой доступной камере
+        if (videoDevices.length > 0) {
+          requestCameraAccess(videoDevices[0].deviceId);
+        }
+      } catch (error) {
+        messageDiv.textContent = 'Ошибка получения камер: ' + error.message;
+      }
+    }
+
+    // Обработчик изменения выбора камеры
+    cameraSelect.addEventListener('change', () => {
+      if (qrScanner) {
+        qrScanner.stop();
+      }
+      requestCameraAccess(cameraSelect.value);
+    });
+
+    // Получаем доступные камеры при загрузке страницы
+    getCameraDevices();
+  });
 </script>
 
 </body>

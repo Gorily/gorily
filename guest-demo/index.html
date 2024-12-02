@@ -109,9 +109,17 @@
 </div>
 
 <!-- Кнопка фонарика -->
-<button id="flashlight-button" onclick="toggleFlashlight()">🔦</button>
+<button id="flashlight-button" onclick="toggleFlashlight();">🔦</button>
 
 <script>
+  let qrScanner;
+  let scanning = true; // Флаг для отслеживания состояния сканирования
+
+  function toggleFlashlight()
+  {
+    qrScanner.toggleFlash();
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const video = document.getElementById('qr-video');
     const resultCard = document.getElementById('result-card');
@@ -130,14 +138,6 @@
       { id: '009#PBD10#6V6JQW', name: 'Павлов Павел Павлович', activated: false },
       { id: '010#PBD10#Z2JZ2W', name: 'Сергеев Сергей Сергеевич', activated: false },
     ];
-
-    let qrScanner;
-    let scanning = true; // Флаг для отслеживания состояния сканирования
-
-    function toggleFlashlight()
-    {
-      qrScanner.toggleFlash();
-    }
 
     function startScanner() {
       qrScanner = new QrScanner(

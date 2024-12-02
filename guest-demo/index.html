@@ -101,9 +101,14 @@
     ];
 
     let qrScanner;
+    let scanning = true; // Флаг для отслеживания состояния сканирования
 
     function startScanner() {
-      qrScanner = new QrScanner(video, result => handleScan(result));
+      qrScanner = new QrScanner(video, result => {
+        if (scanning) { // Проверяем, разрешено ли сканирование
+          handleScan(result);
+        }
+      });
       qrScanner.start();
     }
 
@@ -135,13 +140,12 @@
     }
 
     function handleScan(result) {
+      // Останавливаем сканер
+      scanning = false;
 
       // Проверяем, соответствует ли результат нужному формату
       const regex = /^(.*?)#PBD10#(.+)$/;
       const match = result.match(regex);
-
-      // Останавливаем сканер
-      qrScanner.stop();
 
       if (match) {
         const id = result;
@@ -174,7 +178,7 @@
 
     continueButton.addEventListener('click', () => {
       resultCard.style.display = 'none'; // Скрываем карточку результата
-      qrScanner.start();
+      scanning = true;
     });
 
     // Проверяем доступ к камере при загрузке страницы

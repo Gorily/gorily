@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QR Scanner</title>
-  <script src="qr-scanner.umd.min.js"></script> <!-- Подключаем правильный файл -->
+  <script src="qr-scanner.umd.min.js"></script>
   <style>
     body {
       display: flex;
@@ -14,88 +14,79 @@
       height: 100vh;
       font-family: Arial, sans-serif;
       margin: 0;
-    }
-    #container {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      height: 100%;
+      position: relative;
     }
     #video-container {
-      flex: 0 0 25%; /* 25% высоты в вертикальном режиме */
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
     }
     video {
       width: 100%;
-      height: 100%; /* Занимает всю высоту контейнера */
-      border: 1px solid #ccc;
+      height: 100%;
+      border: none;
     }
-    #content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+    #header {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 2em;
+      color: white;
+      z-index: 10;
     }
-    #message {
-      margin-top: 20px;
-      font-size: 1.2em;
+    #result-card {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      z-index: 20;
+    }
+    .ok {
       color: green;
     }
-    #scanned-ids {
-      margin-top: 20px;
-      list-style-type: none;
-      padding: 0;
+    .repeat {
+      color: yellow;
     }
-    .active {
-      color: green;
-    }
-    .error {
+    .deny {
       color: red;
     }
-
-    /* Горизонтальный режим */
-    @media (orientation: landscape) {
-      #container {
-        flex-direction: row;
-      }
-      #video-container {
-        flex: 0 0 25%; /* 25% ширины в горизонтальном режиме */
-        height: 100%;
-      }
-      video {
-        width: 100%; /* Занимает всю ширину контейнера */
-        height: auto; /* Автоматическая высота для сохранения пропорций */
-      }
-      #content {
-        flex: 1;
-        padding: 20px;
-      }
+    #continue-button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-<div id="container">
-  <div id="video-container">
-    <video id="qr-video"></video>
-  </div>
-  <div id="content">
-    <div id="message"></div>
-    <h3>Отсканированные коды:</h3>
-    <ul id="scanned-ids"></ul>
-  </div>
+<div id="header">мероприятие</div>
+<div id="video-container">
+  <video id="qr-video"></video>
+</div>
+<div id="result-card">
+  <div id="result-message"></div>
+  <button id="continue-button">Продолжить</button>
 </div>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const video = document.getElementById('qr-video');
-    const messageDiv = document.getElementById('message');
-    const scannedIdsList = document.getElementById('scanned-ids');
+    const resultCard = document.getElementById('result-card');
+    const resultMessage = document.getElementById('result-message');
+    const continueButton = document.getElementById('continue-button');
 
-    // Изначальный список кодов и ФИО
     const initialCodes = [
       { id: '001#PBD10#645KWR', name: 'Иванов Иван Иванович', activated: false },
       { id: '002#PBD10#H1VYJM', name: 'Петров Петр Петрович', activated: false },
@@ -111,13 +102,11 @@
 
     let qrScanner;
 
-    // Функция для инициализации сканера
     function startScanner() {
       qrScanner = new QrScanner(video, result => handleScan(result));
       qrScanner.start();
     }
 
-    // Запрашиваем разрешение на доступ к задней камере
     async function requestCameraAccess() {
       try {
         const constraints = {
@@ -125,15 +114,15 @@
             facingMode: { exact: "environment" } // Используем заднюю камеру
           }
         };
+
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
         startScanner();
       } catch (error) {
-        messageDiv.textContent = 'Ошибка доступа к камере: ' + error.message;
+        alert('Ошибка доступа к камере: ' + error.message);
       }
     }
 
-    // Проверяем, есть ли доступ к камере
     async function checkCameraAccess() {
       const devices = await navigator.mediaDevices.enumerateDevices();
       const hasCamera = devices.some(device => device.kind === 'videoinput');
@@ -141,12 +130,11 @@
       if (hasCamera) {
         requestCameraAccess();
       } else {
-        messageDiv.textContent = 'Камера не найдена.';
+        alert('Камера не найдена.');
       }
     }
 
     function handleScan(result) {
-      messageDiv.textContent = result;
 
       // Проверяем, соответствует ли результат нужному формату
       const regex = /^(.*?)#PBD10#(.+)$/;
@@ -163,32 +151,31 @@
           if (!codeEntry.activated) {
             // Код найден и не активирован
             codeEntry.activated = true; // Активируем код
-            messageDiv.textContent = 'Успешный проход с ID: ' + id;
-
-            // Добавляем ID в список отсканированных кодов
-            const listItem = document.createElement('li');
-            listItem.textContent = `${id} - ${codeEntry.name}`;
-            listItem.classList.add('active');
-            scannedIdsList.appendChild(listItem);
+            showResult('ОК', 'ok');
           } else {
             // Код уже активирован
-            messageDiv.textContent = 'Этот ID уже был использован.';
-            messageDiv.classList.add('error');
+            showResult('ПОВТОР', 'repeat');
           }
         } else {
           // Код не найден в списке
-          messageDiv.textContent = 'Код не найден в списке.';
-          messageDiv.classList.add('error');
+          showResult('ОТКАЗ', 'deny');
         }
-
-        // Перезапускаем сканер через 2 секунды
-        setTimeout(() => {
-          messageDiv.textContent = '';
-          messageDiv.classList.remove('error'); // Убираем класс ошибки
-          qrScanner.start();
-        }, 2000);
+      } else {
+        // Если код не соответствует формату
+        showResult('ОТКАЗ', 'deny');
       }
     }
+
+    function showResult(message, status) {
+      resultMessage.textContent = message;
+      resultMessage.className = status; // Устанавливаем класс для цвета текста
+      resultCard.style.display = 'block'; // Показываем карточку результата
+    }
+
+    continueButton.addEventListener('click', () => {
+      resultCard.style.display = 'none'; // Скрываем карточку результата
+      startScanner(); // Возвращаемся к сканированию
+    });
 
     // Проверяем доступ к камере при загрузке страницы
     checkCameraAccess();
@@ -197,3 +184,4 @@
 
 </body>
 </html>
+

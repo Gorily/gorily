@@ -8,7 +8,6 @@ self.addEventListener('install', (event) => {
                 // 'manifest.json',
                 // 'icon-192x192.png',
                 // 'icon-512x512.png',
-                // Добавьте другие ресурсы, которые нужно кэшировать
             ]);
         })
     );

@@ -24,6 +24,7 @@
       position: relative;
       overflow: hidden; /* Скрываем переполнение */
     }
+
     #video-container {
       position: absolute;
       top: 0;
@@ -35,17 +36,14 @@
       align-items: center;
       overflow: hidden; /* Скрываем переполнение */
     }
+
     video {
-      position: absolute; /* Устанавливаем абсолютное позиционирование */
-      top: 50%; /* Центрируем по вертикали */
-      left: 50%; /* Центрируем по горизонтали */
-      min-width: 100%; /* Минимальная ширина 100% */
-      min-height: 100%; /* Минимальная высота 100% */
-      width: auto; /* Автоматическая ширина */
-      height: auto; /* Автоматическая высота */
-      transform: translate(-50%, -50%); /* Центрируем видео */
+      width: 100%; /* Ширина 100% */
+      height: 100%; /* Высота 100% */
+      object-fit: cover; /* Заполняем контейнер, сохраняя соотношение сторон */
       border: none;
     }
+
     #result-card {
       display: none;
       position: absolute;
@@ -115,8 +113,12 @@
         if (scanning) { // Проверяем, разрешено ли сканирование
           handleScan(result);
         }
+      }, {
+        highlightScanRegion: true,
+        highlightCodeOutline: true,
       });
       qrScanner.start();
+      qrScanner._updateOverlay();
     }
 
     async function requestCameraAccess() {

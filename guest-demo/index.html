@@ -78,6 +78,24 @@
       font-size: 1em;
       cursor: pointer;
     }
+
+    /* Стиль для кнопки фонарика */
+    #flashlight-button {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background-color: rgba(255, 255, 255, 0.8);
+      border: none;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   </style>
 </head>
 <body>
@@ -89,6 +107,9 @@
   <div id="result-message"></div>
   <button id="continue-button">Продолжить</button>
 </div>
+
+<!-- Кнопка фонарика -->
+<button id="flashlight-button" onclick="toggleFlashlight()">🔦</button>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -112,6 +133,11 @@
 
     let qrScanner;
     let scanning = true; // Флаг для отслеживания состояния сканирования
+
+    function toggleFlashlight()
+    {
+      qrScanner.toggleFlash();
+    }
 
     function startScanner() {
       qrScanner = new QrScanner(

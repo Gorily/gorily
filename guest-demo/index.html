@@ -148,7 +148,7 @@
       const match = result.match(regex);
 
       if (match) {
-        const id = match[1];
+        const id = result;
         const codeEntry = initialCodes.find(code => code.id === id);
 
         if (codeEntry) {

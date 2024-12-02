@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QR Scanner</title>
+  <title>Мероприятие</title>
   <script src="qr-scanner.umd.min.js"></script>
   <style>
     body {
@@ -15,6 +15,7 @@
       font-family: Arial, sans-serif;
       margin: 0;
       position: relative;
+      overflow: hidden; /* Скрываем переполнение */
     }
     #video-container {
       position: absolute;
@@ -25,19 +26,18 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      overflow: hidden; /* Скрываем переполнение */
     }
     video {
-      width: 100%;
-      height: 100%;
+      position: absolute; /* Устанавливаем абсолютное позиционирование */
+      top: 50%; /* Центрируем по вертикали */
+      left: 50%; /* Центрируем по горизонтали */
+      min-width: 100%; /* Минимальная ширина 100% */
+      min-height: 100%; /* Минимальная высота 100% */
+      width: auto; /* Автоматическая ширина */
+      height: auto; /* Автоматическая высота */
+      transform: translate(-50%, -50%); /* Центрируем видео */
       border: none;
-    }
-    #header {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      font-size: 2em;
-      color: white;
-      z-index: 10;
     }
     #result-card {
       display: none;
@@ -50,13 +50,14 @@
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
       text-align: center;
+      font-size: 2em;
       z-index: 20;
     }
     .ok {
       color: green;
     }
     .repeat {
-      color: yellow;
+      color: darkorange;
     }
     .deny {
       color: red;
@@ -71,7 +72,6 @@
 </head>
 <body>
 
-<div id="header">мероприятие</div>
 <div id="video-container">
   <video id="qr-video"></video>
 </div>
@@ -154,15 +154,15 @@
             showResult('ОК', 'ok');
           } else {
             // Код уже активирован
-            showResult('ПОВТОР', 'repeat');
+            showResult('УЖЕ ПРОХОДИЛ', 'repeat');
           }
         } else {
           // Код не найден в списке
-          showResult('ОТКАЗ', 'deny');
+          showResult('НЕТ В СПИСКЕ', 'deny');
         }
       } else {
         // Если код не соответствует формату
-        showResult('ОТКАЗ', 'deny');
+        showResult('ОШИБКА QR-КОДА', 'deny');
       }
     }
 

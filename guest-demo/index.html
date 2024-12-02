@@ -15,11 +15,6 @@
       font-family: Arial, sans-serif;
       margin: 0;
     }
-    video {
-      width: 100%;
-      height: auto;
-      border: 1px solid #ccc;
-    }
     #container {
       display: flex;
       flex-direction: column;
@@ -30,6 +25,12 @@
       flex: 0 0 25%; /* 25% высоты в вертикальном режиме */
       display: flex;
       justify-content: center;
+      align-items: center;
+    }
+    video {
+      width: 100%;
+      height: 100%; /* Занимает всю высоту контейнера */
+      border: 1px solid #ccc;
     }
     #content {
       flex: 1;
@@ -63,6 +64,10 @@
       #video-container {
         flex: 0 0 25%; /* 25% ширины в горизонтальном режиме */
         height: 100%;
+      }
+      video {
+        width: 100%; /* Занимает всю ширину контейнера */
+        height: auto; /* Автоматическая высота для сохранения пропорций */
       }
       #content {
         flex: 1;

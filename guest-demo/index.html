@@ -114,15 +114,32 @@
     let scanning = true; // Флаг для отслеживания состояния сканирования
 
     function startScanner() {
-      qrScanner = new QrScanner(video, result => {
-        if (scanning) { // Проверяем, разрешено ли сканирование
-          handleScan(result);
-        }
-      }, {
-        highlightScanRegion: true,
-        highlightCodeOutline: true,
-      });
+      qrScanner = new QrScanner(
+              video,
+              result => {
+                if (scanning) { // Проверяем, разрешено ли сканирование
+                  handleScan(result);
+                }
+              },
+              // {
+              //   highlightScanRegion: true,
+              //   highlightCodeOutline: true,
+              //   calculateScanRegion: (v) => {
+              //     const smallestDimension = Math.min(v.videoWidth, v.videoHeight);
+              //
+              //     const scanRegionSize = Math.round(1 / 4 * smallestDimension);
+              //
+              //     return {
+              //       x: Math.round((v.videoWidth - scanRegionSize) / 2),
+              //       y: Math.round((v.videoHeight - scanRegionSize) / 2),
+              //       width: scanRegionSize,
+              //       height: scanRegionSize,
+              //     };
+              //   }
+              // }
+      );
       qrScanner.start();
+      qrScanner._updateOverlay();
     }
 
     async function requestCameraAccess() {
@@ -179,7 +196,7 @@
         }
       } else {
         // Если код не соответствует формату
-        showResult('ОШИБКА QR-КОДА', 'deny');
+        showResult('QR-КОД НЕКОРРЕКТНЫЙ', 'deny');
       }
     }
 

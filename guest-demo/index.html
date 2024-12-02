@@ -13,11 +13,30 @@
       justify-content: center;
       height: 100vh;
       font-family: Arial, sans-serif;
+      margin: 0;
     }
     video {
-      width: 300px;
+      width: 100%;
       height: auto;
       border: 1px solid #ccc;
+    }
+    #container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+    #video-container {
+      flex: 0 0 25%; /* 25% высоты в вертикальном режиме */
+      display: flex;
+      justify-content: center;
+    }
+    #content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
     #message {
       margin-top: 20px;
@@ -35,14 +54,35 @@
     .error {
       color: red;
     }
+
+    /* Горизонтальный режим */
+    @media (orientation: landscape) {
+      #container {
+        flex-direction: row;
+      }
+      #video-container {
+        flex: 0 0 25%; /* 25% ширины в горизонтальном режиме */
+        height: 100%;
+      }
+      #content {
+        flex: 1;
+        padding: 20px;
+      }
+    }
   </style>
 </head>
 <body>
 
-<video id="qr-video"></video>
-<div id="message"></div>
-<h3>Отсканированные коды:</h3>
-<ul id="scanned-ids"></ul>
+<div id="container">
+  <div id="video-container">
+    <video id="qr-video"></video>
+  </div>
+  <div id="content">
+    <div id="message"></div>
+    <h3>Отсканированные коды:</h3>
+    <ul id="scanned-ids"></ul>
+  </div>
+</div>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -52,9 +92,16 @@
 
     // Изначальный список кодов и ФИО
     const initialCodes = [
-      { id: '12345', name: 'Иванов Иван Иванович', activated: false },
-      { id: '67890', name: 'Петров Петр Петрович', activated: false },
-      { id: '54321', name: 'Сидоров Сидор Сидорович', activated: false }
+      { id: '001#PDB10#645KWR', name: 'Иванов Иван Иванович', activated: false },
+      { id: '002#PDB10#H1VYJM', name: 'Петров Петр Петрович', activated: false },
+      { id: '003#PDB10#5E5NBY', name: 'Сидоров Сидор Сидорович', activated: false },
+      { id: '004#PDB10#9T8UZ2', name: 'Александров Александр Александрович', activated: false },
+      { id: '005#PDB10#VH5J0Y', name: 'Васильев Василий Васильевич', activated: false },
+      { id: '006#PDB10#QZ8Q4Z', name: 'Алексеев Алексей Алексеевич', activated: false },
+      { id: '007#PDB10#Z6XJ0N', name: 'Дмитриев Дмитрий Дмитриевич', activated: false },
+      { id: '008#PDB10#2Z7ZJ2', name: 'Ильин Илья Ильич', activated: false },
+      { id: '009#PDB10#6V6JQW', name: 'Павлов Павел Павлович', activated: false },
+      { id: '010#PDB10#Z2JZ2W', name: 'Сергеев Сергей Сергеевич', activated: false },
     ];
 
     let qrScanner;
@@ -95,7 +142,7 @@
 
     function handleScan(result) {
       // Проверяем, соответствует ли результат нужному формату
-      const regex = /^PBD10#(.+)$/;
+      const regex = /^(.*?)#PBD10#(.+)$/;
       const match = result.match(regex);
 
       if (match) {

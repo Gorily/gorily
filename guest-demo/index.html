@@ -141,6 +141,8 @@
     }
 
     function handleScan(result) {
+      messageDiv.textContent = result;
+
       // Проверяем, соответствует ли результат нужному формату
       const regex = /^(.*?)#PBD10#(.+)$/;
       const match = result.match(regex);

@@ -147,6 +147,9 @@
       const regex = /^(.*?)#PBD10#(.+)$/;
       const match = result.match(regex);
 
+      // Останавливаем сканер
+      qrScanner.stop();
+
       if (match) {
         const id = result;
         const codeEntry = initialCodes.find(code => code.id === id);
@@ -173,13 +176,11 @@
           messageDiv.classList.add('error');
         }
 
-        // Останавливаем сканер
-        qrScanner.stop();
         // Перезапускаем сканер через 2 секунды
         setTimeout(() => {
           messageDiv.textContent = '';
           messageDiv.classList.remove('error'); // Убираем класс ошибки
-          startScanner();
+          qrScanner.start();
         }, 2000);
       }
     }

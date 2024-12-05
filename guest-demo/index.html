@@ -126,19 +126,6 @@
     const resultMessage = document.getElementById('result-message');
     const continueButton = document.getElementById('continue-button');
 
-    const initialCodes = [
-      { id: '001#PBD10#645KWR', name: 'Иванов Иван Иванович', activated: false },
-      { id: '002#PBD10#H1VYJM', name: 'Петров Петр Петрович', activated: false },
-      { id: '003#PBD10#5E5NBY', name: 'Сидоров Сидор Сидорович', activated: false },
-      { id: '004#PBD10#9T8UZ2', name: 'Александров Александр Александрович', activated: false },
-      { id: '005#PBD10#VH5J0Y', name: 'Васильев Василий Васильевич', activated: false },
-      { id: '006#PBD10#QZ8Q4Z', name: 'Алексеев Алексей Алексеевич', activated: false },
-      { id: '007#PBD10#Z6XJ0N', name: 'Дмитриев Дмитрий Дмитриевич', activated: false },
-      { id: '008#PBD10#2Z7ZJ2', name: 'Ильин Илья Ильич', activated: false },
-      { id: '009#PBD10#6V6JQW', name: 'Павлов Павел Павлович', activated: false },
-      { id: '010#PBD10#Z2JZ2W', name: 'Сергеев Сергей Сергеевич', activated: false },
-    ];
-
     function startScanner() {
       qrScanner = new QrScanner(
               video,
@@ -196,6 +183,27 @@
       }
     }
 
+    async function getStatus(id) {
+      const encodedId = encodeURIComponent(id);
+      const url = `http://84.201.178.161:9976/check/${encodedId}`;
+
+      try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          console.error(`HTTP error! status: ${response.status}`);
+          return "ERROR"
+        }
+
+        const data = await response.json();
+        return data.status;
+
+      } catch (error) {
+        console.error(`Ошибка при обращении к API: ${error}`);
+        return 'ERROR'
+      }
+    }
+
     function handleScan(result) {
       // Останавливаем сканер
       scanning = false;
@@ -206,21 +214,21 @@
 
       if (match) {
         const id = result;
-        const codeEntry = initialCodes.find(code => code.id === id);
+        getStatus(id).then(status => {
+          const statusMap = {
+            'OK': { message: 'ОК', type: 'ok' },
+            'RETRY': { message: 'УЖЕ ПРОХОДИЛ', type: 'repeat' },
+            'NOT_FOUND': { message: 'НЕТ В СПИСКЕ', type: 'deny' },
+            'ERROR': { message: 'ОШИБКА ОБРАБОТКИ', type: 'deny' }
+          };
 
-        if (codeEntry) {
-          if (!codeEntry.activated) {
-            // Код найден и не активирован
-            codeEntry.activated = true; // Активируем код
-            showResult('ОК', 'ok');
+          const result = statusMap[status];
+          if (result) {
+            showResult(result.message, result.type);
           } else {
-            // Код уже активирован
-            showResult('УЖЕ ПРОХОДИЛ', 'repeat');
+            showResult('НЕИЗВЕСТНАЯ ОШИБКА', 'deny');
           }
-        } else {
-          // Код не найден в списке
-          showResult('НЕТ В СПИСКЕ', 'deny');
-        }
+        });
       } else {
         // Если код не соответствует формату
         showResult('QR-КОД НЕКОРРЕКТНЫЙ', 'deny');

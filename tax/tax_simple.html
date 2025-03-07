@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>Простой налоговый калькулятор</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; }
+        input { width: 100%; padding: 8px; margin: 10px 0; box-sizing: border-box; }
+        ul { list-style: none; padding: 0; }
+        li { margin: 8px 0; padding: 8px; background: #f5f5f5; border-radius: 4px; }
+        h3 { color: #2c3e50; }
+        .total { color: #27ae60; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>Калькулятор налога</h2>
+    <input type="number" id="amount" placeholder="Введите сумму в рублях" oninput="calculateTax()">
+    <div id="result"></div>
+
+    <script>
+        function calculateTax() {
+            // Налоговые ставки и пороги
+            const taxBrackets = [
+                { max: 2400000, rate: 13 },
+                { max: 5000000, rate: 15 },
+                { max: 20000000, rate: 18 },
+                { max: 50000000, rate: 20 }
+            ].sort((a,b) => a.max - b.max);
+            
+            const higherRate = 22; // Ставка для сумм свыше 50 млн
+
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+            let remaining = amount;
+            let totalTax = 0;
+            let breakdown = [];
+
+            // Расчет по налоговым ступеням
+            let prevMax = 0;
+            for(let bracket of taxBrackets) {
+                const range = bracket.max - prevMax;
+                const taxedAmount = Math.min(remaining, range);
+                
+                if(taxedAmount > 0) {
+                    const tax = taxedAmount * (bracket.rate/100);
+                    totalTax += tax;
+                    breakdown.push({
+                        range: `${prevMax.toLocaleString()} - ${bracket.max.toLocaleString()}`,
+                        tax: tax,
+                        rate: bracket.rate
+                    });
+                    remaining -= taxedAmount;
+                }
+                prevMax = bracket.max;
+                if(remaining <= 0) break;
+            }
+
+            // Обработка суммы сверх последней ступени
+            if(remaining > 0) {
+                const tax = remaining * (higherRate/100);
+                totalTax += tax;
+                breakdown.push({
+                    range: `Свыше ${prevMax.toLocaleString()}`,
+                    tax: tax,
+                    rate: higherRate
+                });
+            }
+
+            // Формирование результата
+            const netAmount = amount - totalTax;
+            let resultHTML = '<h3>Детализация налога:</h3><ul>';
+            
+            breakdown.forEach(item => {
+                resultHTML += `
+                    <li>
+                        ${item.range} руб: 
+                        ${item.rate}% = 
+                        <b>${item.tax.toLocaleString()} руб</b>
+                    </li>
+                `;
+            });
+            
+            resultHTML += `</ul>
+                <h3 class="total">Итого налог: ${totalTax.toLocaleString()} руб</h3>
+                <h3 class="total">Сумма на руки: ${netAmount.toLocaleString()} руб</h3>
+            `;
+            
+            document.getElementById('result').innerHTML = resultHTML;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Расширенный налоговый калькулятор</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        .input-group { margin: 15px 0; }
+        input, select { width: 100%; padding: 8px; margin: 5px 0; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background: #f5f5f5; }
+        .month-row:hover { background: #f9f9f9; }
+        .total { font-weight: bold; color: #27ae60; }
+        .input-section { display: grid; grid-gap: 15px; grid-template-columns: repeat(2, 1fr); }
+    </style>
+</head>
+<body>
+    <h2>Расчет зарплаты с бонусами</h2>
+
+    <div class="input-section">
+        <div class="input-group">
+            <label>Оклад (руб):</label>
+            <input type="number" id="salary" oninput="calculate()">
+        </div>
+
+        <div class="input-group">
+            <label>Разовая премия (руб):</label>
+            <input type="number" id="bonus" oninput="calculate()">
+        </div>
+
+        <div class="input-group">
+            <label>Месяц премии:</label>
+            <select id="bonusMonth" onchange="calculate()">
+                <option value="0">Январь</option>
+                <option value="1">Февраль</option>
+                <option value="2">Март</option>
+                <option value="3">Апрель</option>
+                <option value="4">Май</option>
+                <option value="5">Июнь</option>
+                <option value="6">Июль</option>
+                <option value="7">Август</option>
+                <option value="8">Сентябрь</option>
+                <option value="9">Октябрь</option>
+                <option value="10">Ноябрь</option>
+                <option value="11">Декабрь</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>Квартальный бонус (% от оклада):</label>
+            <input type="number" id="quarterBonus" step="0.1" oninput="calculate()">
+        </div>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const taxBrackets = [
+            { max: 2400000, rate: 13 },
+            { max: 5000000, rate: 15 },
+            { max: 20000000, rate: 18 },
+            { max: 50000000, rate: 20 }
+        ].sort((a,b) => a.max - b.max);
+        const higherRate = 22;
+
+        function calculate() {
+            const salary = parseFloat(document.getElementById('salary').value) || 0;
+            const bonus = parseFloat(document.getElementById('bonus').value) || 0;
+            const bonusMonth = parseInt(document.getElementById('bonusMonth').value);
+            const quarterBonusPct = parseFloat(document.getElementById('quarterBonus').value) || 0;
+
+            const quarterBonusAmount = salary * 3 * (quarterBonusPct / 100);
+            const quarterMonths = [3, 6, 9, 0]; // Апрель, Июль, Октябрь, Январь
+
+            let totalIncome = 0;
+            let totalTax = 0;
+            const monthlyData = [];
+
+            // Расчет по месяцам
+            for(let month = 0; month < 12; month++) {
+                let monthIncome = salary;
+
+                // Добавляем разовую премию
+                if(month === bonusMonth) monthIncome += bonus;
+
+                // Добавляем квартальный бонус
+                if(quarterMonths.includes(month)) {
+                    monthIncome += quarterBonusAmount;
+                }
+
+                const cumulativeIncome = salary*(month+1) +
+                                      (month >= bonusMonth ? bonus : 0) +
+                                      quarterBonusAmount * getQuarterBonusCount(month);
+
+                let tax = calculateTax(cumulativeIncome) - totalTax;
+                tax = Math.max(tax, 0);
+                totalTax += tax;
+
+                monthlyData.push({
+                    income: monthIncome,
+                    tax: tax,
+                    net: monthIncome - tax,
+                    bonuses: []
+                });
+            }
+
+            // Формирование таблицы
+            let tableHTML = `
+                <h3>Помесячный расчет:</h3>
+                <table>
+                    <tr>
+                        <th>Месяц</th>
+                        <th>Доход</th>
+                        <th>Налог</th>
+                        <th>На руки</th>
+                        <th>Бонусы</th>
+                    </tr>
+            `;
+
+            monthlyData.forEach((data, index) => {
+                const bonuses = [];
+                if(index === bonusMonth) bonuses.push(`Премия: ${bonus.toLocaleString()} руб`);
+                if(quarterMonths.includes(index)) bonuses.push(`Квартальный: ${quarterBonusAmount.toLocaleString()} руб`);
+
+                tableHTML += `
+                    <tr class="month-row">
+                        <td>${getMonthName(index)}</td>
+                        <td>${data.income.toLocaleString()} руб</td>
+                        <td>${data.tax.toLocaleString()} руб</td>
+                        <td>${data.net.toLocaleString()} руб</td>
+                        <td>${bonuses.join('<br>') || '-'}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                <tr class="total">
+                    <td>Итого за год:</td>
+                    <td>${(salary*12 + bonus + quarterBonusAmount*4).toLocaleString()} руб</td>
+                    <td>${totalTax.toLocaleString()} руб</td>
+                    <td>${(salary*12 + bonus + quarterBonusAmount*4 - totalTax).toLocaleString()} руб</td>
+                    <td></td>
+                </tr>
+                </table>
+            `;
+
+            document.getElementById('results').innerHTML = tableHTML;
+        }
+
+        function getQuarterBonusCount(month) {
+            const quarterMonths = [0, 3, 6, 9];
+            return quarterMonths.filter(m => m <= month).length;
+        }
+
+        function calculateTax(amount) {
+            let remaining = amount;
+            let totalTax = 0;
+            let prevMax = 0;
+
+            for(let bracket of taxBrackets) {
+                const range = bracket.max - prevMax;
+                const taxedAmount = Math.min(remaining, range);
+
+                if(taxedAmount > 0) {
+                    totalTax += taxedAmount * (bracket.rate/100);
+                    remaining -= taxedAmount;
+                }
+                prevMax = bracket.max;
+                if(remaining <= 0) break;
+            }
+
+            if(remaining > 0) {
+                totalTax += remaining * (higherRate/100);
+            }
+
+            return totalTax;
+        }
+
+        function getMonthName(index) {
+            const months = [
+                'Январь', 'Февраль', 'Март', 'Апрель',
+                'Май', 'Июнь', 'Июль', 'Август',
+                'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+            ];
+            return months[index];
+        }
+    </script>
+</body>
+</html>
